@@ -1,0 +1,9 @@
+bin/infobot
+bin/infobot-import
+lib/Bot/Infobot.pod
+lib/Bot/Infobot/Config.pm
+MANIFEST			This list of files
+MANIFEST.SKIP
+META.yml
+Build.PL
+Makefile.PL

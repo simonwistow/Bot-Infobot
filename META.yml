@@ -1,0 +1,117 @@
+--- #YAML:1.0
+name: Bot-Infobot
+version: 0.8
+license: perl
+distribution_type: module
+requires:
+  Acme::Magic8Ball: 1.1
+  ? |-
+    Acme::Scurvy::Whoreson::BilgeRat::Backend::insultserver
+: 0
+  Bot::BasicBot::Pluggable: 0
+  Finance::Currency::Convert::XE: 0
+  Finance::Quote: 0
+  Games::Dice: 0
+  Geo::WeatherNWS: 0
+  HTML::Entities: 0
+  I18N::LangTags: 0
+  LWP::Simple: 0
+  Lingua::Translate: 0
+  Lingua::Translate::Babelfish: 0
+  Locale::Language: 0
+  Math::Expression: 0
+  Math::Trig: 0
+  Math::Units: 0
+  Net::Traceroute: 0
+  Net::Whois: 0
+  Test::More: 0
+  Text::CSV: 0
+  URI::Find::Simple: 0
+  URI::Title: 0
+  Unicode::Map8: 0
+  WWW::MakeAShorterLink: 0
+  WWW::Search: 0
+  XML::RSS: 0
+recommends: {}
+build_requires: {}
+conflicts: {}
+provides:
+  Bot::BasicBot::Pluggable::Module::Aviation:
+    file: lib/Bot/BasicBot/Pluggable/Module/Aviation.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Bash:
+    file: lib/Bot/BasicBot/Pluggable/Module/Bash.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Botsnack:
+    file: lib/Bot/BasicBot/Pluggable/Module/Botsnack.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Convert:
+    file: lib/Bot/BasicBot/Pluggable/Module/Convert.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Dice:
+    file: lib/Bot/BasicBot/Pluggable/Module/Dice.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Excuse:
+    file: lib/Bot/BasicBot/Pluggable/Module/Excuse.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Foldoc:
+    file: lib/Bot/BasicBot/Pluggable/Module/Foldoc.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Funcs:
+    file: lib/Bot/BasicBot/Pluggable/Module/Funcs.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Hyperarchive:
+    file: lib/Bot/BasicBot/Pluggable/Module/Hyperarchive.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::IMDB:
+    file: lib/Bot/BasicBot/Pluggable/Module/IMDB.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Insult:
+    file: lib/Bot/BasicBot/Pluggable/Module/Insult.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::LongURLs:
+    file: lib/Bot/BasicBot/Pluggable/Module/LongURLs.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Magic8Ball:
+    file: lib/Bot/BasicBot/Pluggable/Module/Magic8Ball.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Maths:
+    file: lib/Bot/BasicBot/Pluggable/Module/Maths.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Nickometer:
+    file: lib/Bot/BasicBot/Pluggable/Module/Nickometer.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Search:
+    file: lib/Bot/BasicBot/Pluggable/Module/Search.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Spell:
+    file: lib/Bot/BasicBot/Pluggable/Module/Spell.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Status:
+    file: lib/Bot/BasicBot/Pluggable/Module/Status.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Stockquote:
+    file: lib/Bot/BasicBot/Pluggable/Module/Stockquote.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Summon:
+    file: lib/Bot/BasicBot/Pluggable/Module/Summon.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Traceroute:
+    file: lib/Bot/BasicBot/Pluggable/Module/Traceroute.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Translate:
+    file: lib/Bot/BasicBot/Pluggable/Module/Translate.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Weather:
+    file: lib/Bot/BasicBot/Pluggable/Module/Weather.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Websters:
+    file: lib/Bot/BasicBot/Pluggable/Module/Websters.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Whois:
+    file: lib/Bot/BasicBot/Pluggable/Module/Whois.pm
+    version: ~
+  Bot::BasicBot::Pluggable::Module::Zippy:
+    file: lib/Bot/BasicBot/Pluggable/Module/Zippy.pm
+    version: ~
+generated_by: Module::Build version 0.18
