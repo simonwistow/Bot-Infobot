@@ -7,3 +7,4 @@ MANIFEST.SKIP
 META.yml
 Build.PL
 Makefile.PL
+test.pl

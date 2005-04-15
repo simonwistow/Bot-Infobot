@@ -4,3 +4,7 @@ blib
 infobot.conf
 .storable
 loader.settings
+.svn
+.db
+Makefile
+
