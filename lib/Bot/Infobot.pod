@@ -10,7 +10,7 @@ Bot::Infobot - a Bot::BasicBot::Pluggable based replacement for the venerable in
 First write a config file (see below for details of the format) making sure that
 you have a C<[ Store ]> section. Then run
 
-	% infobot-import <dsn> <username> <password>
+    % infobot-import <dsn> <username> <password>
 
 and sit back and watch the show. This can take anything from 5 minutes to 6 hours
 depending on size of the brain and the store method (Storable is fastest, then 
@@ -18,7 +18,7 @@ then the DBM::Deep based Deep driver and then DBI).
 
 Finally just type 
 
-	% infobot 
+    % infobot 
 
 in the same directory and everything will just work. Probably.
 
@@ -33,11 +33,11 @@ You can get a list of config values for the bot on the C<infobot> manpage but th
 minimum config you should have to get yourself up and running are something like
 
     
-	nick     = mybotsnick
+    nick     = mybotsnick
     server   = irc.perl.org
     channels = #bottest
 
-    [Store]
+    [ Store ]
     type     = Storable
 
  

@@ -42,6 +42,7 @@ would be converted to
                         'quirka' => 'fleeg',
                     }
         )
+
 =cut
 
 sub parse_config {
@@ -58,7 +59,8 @@ sub parse_config {
         }
         delete $config->{_};
         while (my ($key,$val) = each %{$config}) {
-                if ($key eq 'Store') {
+          $key =~ s!(^\s*|\s*$)!!g;       
+              if ($key eq 'Store') {
                         $conf{'store'} = $val;
                 } else {
                         $conf{$key} = $val;
@@ -70,6 +72,8 @@ sub parse_config {
 
 
 =head2 save_config <file> <hash of values>
+
+Save the config back out again.
 
 =cut
 
@@ -83,7 +87,7 @@ sub save_config {
                 $val = join " ", @$val if ref $val eq 'ARRAY';
                 if (ref $val eq 'HASH') {
                         $key = 'Store' if $key eq 'store';
-                        $conf->{$key} = $val;
+                        $conf->{" $key "} = $val;
                         next;
                 }
                 $conf->{_}->{$key} = $val;

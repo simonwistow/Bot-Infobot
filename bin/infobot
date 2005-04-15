@@ -14,7 +14,7 @@ infobot - an plugin based irc bot based on Kevin Lenzo's original irc bot
 The original Infobot was written by Kevin Lenzo. You can get more 
 information from here.
 
-	http://www.infobot.org/
+    http://www.infobot.org/
 
 The code is horrible.
 
@@ -38,12 +38,12 @@ namespace and then sub namespaces for each plugin.
 
 For example the config file 
 
-	channels = #somechannel #someotherchannnel
-	server   = irc.example.com
-	nick     = mybot	
+    channels = #somechannel #someotherchannnel
+    server   = irc.example.com
+    nick     = mybot    
 
-	[Foo]
-	somevar = a value
+    [Foo]
+    somevar = a value
 
 Will join a couple of channels under the given nick. The plugin
 C<Bot::BasicBot::Pluggable::Module::Foo> will have the 
@@ -149,15 +149,21 @@ my %conf = parse_config($file);
 
 # split up the multi keys
 for (@multi_keys) {
-	next unless exists $conf{$_};
-	my @vals = split ' ', $conf{$_};
-	$conf{$_} = \@vals;
+    next unless exists $conf{$_};
+    my @vals = split ' ', $conf{$_};
+    $conf{$_} = \@vals;
 }
 
 
 
 # fire up the bot
 my $bot = Bot::BasicBot::Pluggable->new( %conf );
+
+
+$SIG{INT} = sub 
+{ 
+	die "Being told to cark it\n";
+};
 
 # now use Loader to load the rest of the Modules
 print "Loading Loader: ";
@@ -167,20 +173,20 @@ print "\n";
 
 # Then set the keys the plugins
 foreach my $key (keys %conf) {
-	next if $key eq 'store';
-	next unless ref $key eq 'HASH';
-	my $mod = $bot->module($key);
+    next if $key eq 'store';
+    next unless ref $key eq 'HASH';
+    my $mod = $bot->module($key);
 
 
-	unless (defined $mod) {
-		print "We haven't loaded a module $key - config values will be ignored\n";
-		next; # should we 'next' now? bah, wait for people to compain 
-	}
+    unless (defined $mod) {
+        print "We haven't loaded a module $key - config values will be ignored\n";
+        next; # should we 'next' now? bah, wait for people to compain 
+    }
 
-	foreach my $sub_key (keys %{$conf{$key}}) {
-		my $val = $conf{$key}->{$sub_key};
-		$mod->set($sub_key, $val);
-	}
+    foreach my $sub_key (keys %{$conf{$key}}) {
+        my $val = $conf{$key}->{$sub_key};
+        $mod->set($sub_key, $val);
+    }
 }
 
 

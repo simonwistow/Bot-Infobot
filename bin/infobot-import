@@ -3,7 +3,6 @@
 
 use strict;
 use DBI;
-use Storable;
 use Bot::Infobot::Config qw( parse_config save_config );
 use Text::CSV;
 
@@ -11,15 +10,16 @@ die "You must pass atleast a DSN\n" unless @ARGV;
 
 my %config = parse_config ( 'infobot.conf' );
 
-use Bot::BasicBot::Pluggable::Store::Deep;
-
-
 
 my $name         = $config{store}->{type} || 'Storable';
+
+	
 my $store_class  = "Bot::BasicBot::Pluggable::Store::${name}";
 
 eval "require $store_class";
 die "Couldn't load $store_class - $@\n" if $@;
+
+$store_class->import;
 
 my $store = $store_class->new( %{$config{store}} ); 
 
@@ -80,7 +80,8 @@ Distributed under the same terms as Perl itself
 
 # various vars
 my $width = 72;
-my $debug_limit = -1000;
+my $debug_limit = -100;
+
 
 
 ############################################################
@@ -110,21 +111,33 @@ FACTOIDS:
 	status_init("extracting factoids");
 	my $atoms = 0;
 	my $facts = 0;
-	
-	foreach my $table (qw(are is)) {
-		my $sth = do_db($dbh, "select * from t_${table}");
+
+	foreach my $table (qw(is are)) {
+		my $sth   = do_db($dbh, "select * from t_${table}");
+		my $rows  = $sth->rows;
 		while (my $result = $sth->fetchrow_hashref) {
 			my $what = $result->{pkey};
 			my $fact = $result->{pvalue};
 			my $time = $result->{touched} || time();
-			status_update("$facts");
+			status_update("$facts/$rows");
 			
-			my @facts;
-			foreach my $atom (split(/(?:=?or=?\s*)\|\s*/, $fact)) {
-				$atoms++;
-				push @facts, { create_time => $time, create_who => 'infobot_importer', description => $atom, object => $what, is_are => $table };
+			my @current;
+			foreach my $part (split /\s*\|\s*/,$fact) {
+				my $alt = ($part =~ /^</);
+				if ($alt) {
+					push @current, { alt => 1, text => $part}; 
+				} else {
+					push (@current, { alt => 0, text => $_ }) for split (/\s+or\s+/,$part);
+				}
+				$atoms += scalar(@current);
+				
 			}
-			$store->set('Infobot',"infobot_$what", \@facts);
+			my $set = {
+    			   is_are => $table,
+			   factoids => \@current,
+  			};
+
+			$store->set('Infobot',"infobot_".lc($what), $set);
 			last if $debug_limit > 1 && $facts >= $debug_limit;
 			$facts++;
 		}
@@ -153,6 +166,7 @@ SEEN:
 		my ($when,$where,$what) = split /$;/, $seen;
 		next unless defined $when && defined $where && defined $what;
 		$store->set('Seen',"seen_$who", { time => $when, channel => $where, what => $what });
+
 		$count++;
 		last if $debug_limit > 1 && $count >= $debug_limit;
 	}
@@ -279,6 +293,7 @@ sub do_db {
 		print $status_header;
 		print "."x($width-length($status_header.$update));
 		print $update;
+		
 	}
 
 	sub status_finish {
