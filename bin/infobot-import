@@ -1,7 +1,7 @@
 #!perl -w
 
 
-#use strict;
+use strict;
 use Bot::Infobot::Config qw( parse_config save_config );
 use Text::CSV;
 use Data::Dumper;
@@ -269,7 +269,7 @@ KARMA:
     status_finish("stored $count karma incidents");
 }
 
-
+IGNORE:
 {
     status_init("setting ignore list");
     my $ignore = $config{'ignore_list'} || "";
@@ -277,6 +277,7 @@ KARMA:
     my $count = 0;
     $importer->fetch('ignore');
     while (my $who = $importer->next) {
+	next unless $who->{key};
         $ignore{$who->{key}} = 1;
         $count++;
     }
@@ -327,24 +328,26 @@ print "\n\nCompleted - have a nice day!\n\n";
 package  Bot::Infobot::Importer::DBI;
 use DBI;
 use Carp qw(croak);    
+use strict;
 
 sub new {
     my $class = shift;
 
     my $dbi = DBI->connect( @_ ) || die "DB connection not made - $DBI::errstr\n";
 
-    my $self = { dbh => $dbi };
+    my $self = { dbh => $dbi, table_prefix => 't' };
 
     return bless $self, $class;
 }
 
 sub fetch {
-    my ($self, $table, $key) = @_;
-    my $sql = "SELECT * FROM $table";
-    if ($key) {
+    my ($self, $table, @keys) = @_;
+    my $table_prefix = $self->{table_prefix};
+    my $sql = "SELECT * FROM ${table_prefix}_${table}";
+    if (@keys) {
         $sql .= " where key = ?";
     } 
-    $self->{sth} = $self->do_db($sql, $key);
+    $self->{sth} = $self->do_db($sql, @keys);
 
     return $self->{sth};
 }
@@ -359,8 +362,10 @@ sub rows {
 
 
 sub next {
-    my ($self) = @_;
+    my $self = shift;
+    return unless $self->{sth};
     my $return = $self->{sth}->fetchrow_hashref;
+    return unless $return->{pkey};
     # munge pkey and pvalue to right names
     for (qw(key value)) {
         $return->{$_} = $return->{"p$_"};
@@ -379,7 +384,9 @@ sub finish {
 sub do_db {
     my ($self, $sql, @values) = @_;
     my $sth = $self->{dbh}->prepare($sql);
-    $sth->execute(@values);
+    my $rv  = $sth->execute(@values);
+    die "Error executing '$sql' : ".$self->{dbh}->errstr."\n" unless $rv;
+
     return $sth;
 }
 
@@ -391,6 +398,7 @@ use Fcntl qw(/^O_/);
 use Data::Dumper;
 use AnyDBM_File;
 use POSIX;
+use strict;
 
 
 sub new {
