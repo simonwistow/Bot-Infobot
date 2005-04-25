@@ -42,11 +42,33 @@ infobot_import - import an old infobot brain into new infrastructure
 
 =head1 SYNOPSIS
 
-    infobot_connect dsn [user [password]]
+    infobot-import dsn [user [password]]
+
+=head1 USAGE
+
+If you're using a stock infobot then changing to the directory where the 
+bot stores its config. There should be files lying around like 
+<botname>-is.(dir|pag). Then do :
+
+	infobot-import <botname>
+
+If it's a modified infobot using the DBI backend then doing something 
+like
+
+	infobot-import dbi:mysql:<dbname> <username> <password>
+
+should work.
+
+
+It should be noted that if you have a lot of items then the Storable 
+backend, whilst quick, will bloat up to a lot of memory. the DBI backend 
+is slow but efficient. The Deep backend is a good compromise.
+
 
 =head1 DESCRIPTION
 
-This program will import the values for
+This program will import the values for an existing, old style infobot
+into a new style.
 
 =over 4
 
@@ -65,13 +87,6 @@ for which C<Bot::BasicBot::Pluggable::Store> backend to use.
 
 See the C<infobot> documentation for details on the 
 C<Store> config keys.
-
-=head1 BUGS
-
-This only deals with infobots with a DBI backend. I need some
-way to deal with those that have a tied DB backend. However
-since I don't have of one of those I'm going to have to wait
-until I have something to test it with.
 
 =head1 AUTHOR
 

@@ -32,7 +32,7 @@ Infobot - now with 78% less crack.
 
 =head1 CONFIGURATION
 
-We look in the current directory for a file called C<infobot.config>,
+We look in the current directory for a file called C<infobot.conf>,
 which is in C<.ini> file. Variables are seperated into the main 
 namespace and then sub namespaces for each plugin.  
 
@@ -116,7 +116,30 @@ Stores are passed anything in the C<Store> namespace. Perhaps the most
 important value is C<name> which describes which backend to use - the default
 is C<Storable> but C<Bot::BasicBot::Pluggable> also ships with a DBI backend.
 
-See the various backend for what variables you need to pass.
+See the various backend for what variables you need to pass. Here are 
+some examples
+
+=head2 Storable
+
+    [ Store ]
+    type = Storable
+
+=head2 Deep
+
+    [ Store ]
+    type = Deep
+    file = brane.deep
+
+=head2 DBI
+
+    [ Store ]
+    type     = DBI
+    dsn      = dbi:SQLite:brane.db
+    user     = myusername
+    password = mypassword
+    table    = brane
+
+the table should be created automatically
 
 
 =head1 AUTHOR
@@ -162,7 +185,7 @@ my $bot = Bot::BasicBot::Pluggable->new( %conf );
 
 $SIG{INT} = sub 
 { 
-	die "Being told to cark it\n";
+    die "Being told to cark it\n";
 };
 
 # now use Loader to load the rest of the Modules

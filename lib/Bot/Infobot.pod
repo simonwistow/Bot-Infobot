@@ -62,10 +62,6 @@ are up on CPAN.
 
 The original patches that inspired this are here - http://thegestalt.org/simon/perl/
 
-=head1 BUGS
-
-Needs to be able to import tied DBM based brains.
-
 =head1 AUTHOR
 
 Simon Wistow <simon@thegestalt.org>
