@@ -1,19 +1,20 @@
 #!perl -w
 
 
-use strict;
-use DBI;
+#use strict;
 use Bot::Infobot::Config qw( parse_config save_config );
 use Text::CSV;
+use Data::Dumper;
 
-die "You must pass atleast a DSN\n" unless @ARGV;
+
+die "You must pass at least a DSN\n" unless @ARGV;
 
 my %config = parse_config ( 'infobot.conf' );
 
 
 my $name         = $config{store}->{type} || 'Storable';
 
-	
+    
 my $store_class  = "Bot::BasicBot::Pluggable::Store::${name}";
 
 eval "require $store_class";
@@ -27,7 +28,13 @@ my $store = $store_class->new( %{$config{store}} );
 
 $|++;
 
-my $dbh = DBI->connect( @ARGV ) || die "DB connection not made - $DBI::errstr\n";
+# sort of the importer class
+my $importer;
+if ($ARGV[0] =~ m!^dbi:!) {
+    $importer = Bot::Infobot::Importer::DBI->new(@ARGV);
+} else {
+    $importer = Bot::Infobot::Importer::DBM->new(@ARGV);
+}
 
 =head1 NAME
 
@@ -35,7 +42,7 @@ infobot_import - import an old infobot brain into new infrastructure
 
 =head1 SYNOPSIS
 
-	infobot_connect dsn [user [password]]
+    infobot_connect dsn [user [password]]
 
 =head1 DESCRIPTION
 
@@ -82,8 +89,6 @@ Distributed under the same terms as Perl itself
 my $width = 72;
 my $debug_limit = -100;
 
-
-
 ############################################################
 # Banner
 ############################################################
@@ -101,49 +106,49 @@ status_init("reticulating splines");
 status_finish("injoke successfully promulgated");
 
 
-
-
 FACTOIDS:
 ############################################################
 # Factoids first
 ############################################################
 {
-	status_init("extracting factoids");
-	my $atoms = 0;
-	my $facts = 0;
+    status_init("extracting factoids");
+    my $atoms = 0;
+    my $facts = 0;
 
-	foreach my $table (qw(is are)) {
-		my $sth   = do_db($dbh, "select * from t_${table}");
-		my $rows  = $sth->rows;
-		while (my $result = $sth->fetchrow_hashref) {
-			my $what = $result->{pkey};
-			my $fact = $result->{pvalue};
-			my $time = $result->{touched} || time();
-			status_update("$facts/$rows");
-			
-			my @current;
-			foreach my $part (split /\s*\|\s*/,$fact) {
-				my $alt = ($part =~ /^</);
-				if ($alt) {
-					push @current, { alt => 1, text => $part}; 
-				} else {
-					push (@current, { alt => 0, text => $_ }) for split (/\s+or\s+/,$part);
-				}
-				$atoms += scalar(@current);
-				
-			}
-			my $set = {
-    			   is_are => $table,
-			   factoids => \@current,
-  			};
+    foreach my $table (qw(is are)) {
+        $importer->fetch(${table});
+        my $rows  = $importer->rows;
 
-			$store->set('Infobot',"infobot_".lc($what), $set);
-			last if $debug_limit > 1 && $facts >= $debug_limit;
-			$facts++;
-		}
-		$sth->finish;
-	}
-	status_finish("$facts factoids with $atoms atoms");
+        while (my $result = $importer->next) {
+            my $what = $result->{key};
+            my $fact = $result->{value};
+            my $time = $result->{touched} || time();
+            status_update("$facts/$rows");
+            
+            my @current;
+            foreach my $part (split /\s*\|\s*/,$fact) {
+                my $alt = ($part =~ /^</);
+                if ($alt) {
+                    push @current, { alt => 1, text => $part}; 
+                } else {
+                    push (@current, { alt => 0, text => $_ }) for split (/\s+or\s+/,$part);
+                }
+                $atoms += scalar(@current);
+                
+            }
+            my $set = {
+                   is_are => $table,
+               factoids => \@current,
+              };
+
+            $store->set('Infobot',"infobot_".lc($what), $set);
+            last if $debug_limit > 1 && $facts >= $debug_limit;
+            $facts++;
+        }
+        $importer->finish;
+        last;
+    }
+    status_finish("$facts factoids with $atoms atoms");
 }
 
 
@@ -152,27 +157,27 @@ SEEN:
 # Now seen
 ############################################################
 {
-	status_init("extracting last seen");
-	my %seen;
-	my $count = 0;
-	my $total = 0;
-	my $sth = do_db($dbh, "select * from t_seen");
-	while (my $result = $sth->fetchrow_hashref) {
-		my $who  = $result->{pkey};
-		my $seen = $result->{pvalue};
-		$total++;
-		status_update("$total");
-		#local $; = \034;
-		my ($when,$where,$what) = split /$;/, $seen;
-		next unless defined $when && defined $where && defined $what;
-		$store->set('Seen',"seen_$who", { time => $when, channel => $where, what => $what });
+    status_init("extracting last seen");
+    my %seen;
+    my $count = 0;
+    my $total = 0;
+    $importer->fetch("seen");
+    while (my $result = $importer->next) {
+        my $who  = $result->{key};
+        my $seen = $result->{value};
+        $total++;
+        status_update("$total");
+        #local $; = \034;
+        my ($when,$where,$what) = split /$;/, $seen;
+        next unless defined $when && defined $where && defined $what;
+        $store->set('Seen',"seen_$who", { time => $when, channel => $where, what => $what });
 
-		$count++;
-		last if $debug_limit > 1 && $count >= $debug_limit;
-	}
-	$sth->finish;
-	$total -= $count;
-	status_finish("did $count people, skipped $total");
+        $count++;
+        last if $debug_limit > 1 && $count >= $debug_limit;
+    }
+    $importer->finish;
+    $total -= $count;
+    status_finish("did $count people, skipped $total");
 }
 
 
@@ -181,128 +186,254 @@ KARMA:
 # Then karma
 ############################################################
 {
-	my %karma;
-	my %scores;
+    my %karma;
+    my %scores;
 
-	# first off we select stuff from the negative and postive comments
-	foreach my $what (qw(positive negative)) 
-	{
-		status_init("extracting $what karma");
-		my $count = 0;
-		my $sth = do_db($dbh,"select * from t_${what}karmacomments");
-		while (my $result = $sth->fetchrow_hashref) {
-			my $who  = $result->{pkey};
-			my $why  = $result->{pvalue};
-			my $when = $result->{touched};
-			my $pos  = $what eq 'positive';
-			
-			my $csv = Text::CSV->new(); $csv->parse($why);
-			
-			foreach my $col ($csv->fields) {				
-				push @{$karma{$who}}, { positive => $pos, reason => $col, timestamp => $when, who => 'infobot_importer' };
-				$scores{$who} += -1 + (2*$pos);
-				$count++;
-			}
-			status_update("$count");
-			last if $debug_limit > 1 && $count >= $debug_limit;
-		}
-		status_finish("inserted $count real items");
+    # first off we select stuff from the negative and postive comments
+    foreach my $what (qw(positive negative)) 
+    {
+        status_init("extracting $what karma");
+        my $count = 0;
+        eval { $importer->fetch("${what}karmacomments") };
+        
+        while (!$@ && (my $result = $importer->next)) {
+            my $who  = $result->{key};
+            my $why  = $result->{value};
+            my $when = $result->{touched};
+            my $pos  = $what eq 'positive';
+            
+            my $csv = Text::CSV->new(); $csv->parse($why);
+            
+            foreach my $col ($csv->fields) {                
+                push @{$karma{$who}}, { positive => $pos, reason => $col, timestamp => $when, who => 'infobot_importer' };
+                $scores{$who} += -1 + (2*$pos);
+                $count++;
+            }
+            status_update("$count");
+            last if $debug_limit > 1 && $count >= $debug_limit;
+        }
+        status_finish("inserted $count real items");
+        $importer->finish;
+    }
+    status_init("fudging non explained karma");
+    my $count = 0;
+    # then we count the difference between that and the actual tally
+    
+    my $table = (ref($importer) =~ /DBI$/) ? "plusplus" : "karma";
+    $importer->fetch($table);
 
-	}
-	status_init("fudging non explained karma");
-	my $count = 0;
-	# then we count the difference between that and the actual tally
-	foreach my $who (keys %scores) {
-		my $sth = do_db($dbh, "select * from t_plusplus where pkey = ?", $who); 
- 		# and finally insert a load of fake values
-		my $result = $sth->fetchrow_hashref;
-		my $many   = $result->{pvalue} || 0;
-		my $when   = $result->{touched};
+    while (my $result = $importer->next) {
+        my $who    = $result->{key};
+        my $many   = $result->{value}   || 0;
+        my $when   = $result->{touched} || time();
 
-		$scores{$who} ||= 0;
-		
-		my $diff   = $many - $scores{$who}; next if $diff == 0;
-		my $pos    = $diff > 0; $diff *= -1 if !$pos;
-		my $text   = ($pos)? "positive" : "negative";
-		#print "  updating $who karma";
-		foreach (0..$diff) {
-			push @{$karma{$who}}, { positive => $pos, reason => '', timestamp => $when, who => 'infobot_importer' };			
-		}
-		$count++;
-		status_update("$count");
+        $scores{$who} ||= 0;
+        
+        my $diff   = $many - $scores{$who}; next if $diff == 0;
+        my $pos    = $diff > 0; $diff *= -1 if !$pos;
+        my $text   = ($pos)? "positive" : "negative";
+        #print "  updating $who karma";
+        foreach (0..$diff) {
+            push @{$karma{$who}}, { positive => $pos, reason => '', timestamp => $when, who => 'infobot_importer' };            
+        }
+        $count++;
+        status_update("$count");
+        $importer->finish;
+    }
+    status_finish("fudged $count items");
 
-	}
-	status_finish("fudged $count items");
-
-	$count = 0;
-	my $total = scalar(keys %karma);
-	status_init("storing karma"); 
-	while (my ($key,$val) = each %karma) {
-		$count++;
-		status_update("$count/$total");
-		$store->set('Karma',"karma_${key}", $val);
-		delete $karma{$key};
-	}
-	status_finish("stored $count karma incidents");
+    $count = 0;
+    my $total = scalar(keys %karma);
+    status_init("storing karma"); 
+    while (my ($key,$val) = each %karma) {
+        $count++;
+        status_update("$count/$total");
+        $store->set('Karma',"karma_${key}", $val);
+        delete $karma{$key};
+    }
+    status_finish("stored $count karma incidents");
 }
 
 
 {
-	status_init("setting ignore list");
-        my $sth    = do_db($dbh,"select * from t_ignore");
-        my $ignore = $config{'ignore_list'} || "";
-	my %ignore = map { $_ => 1 } split ' ', $ignore; 
-	my $count = 0;
-	while (my $who = $sth->fetchrow_hashref) {
-		$ignore{$who->{pkey}} = 1;
-		$count++;
-	}
-
-	$config{'ignore_list'} = join " ", keys %ignore;
-	save_config( 'infobot.conf', %config );
-	status_finish("added $count people");
+    status_init("setting ignore list");
+    my $ignore = $config{'ignore_list'} || "";
+    my %ignore = map { $_ => 1 } split ' ', $ignore; 
+    my $count = 0;
+    $importer->fetch('ignore');
+    while (my $who = $importer->next) {
+        $ignore{$who->{key}} = 1;
+        $count++;
+    }
+    $importer->finish;
+    $config{'ignore_list'} = join " ", keys %ignore;
+    save_config( 'infobot.conf', %config );
+    status_finish("added $count people");
 }
 
 
 print "\n\nCompleted - have a nice day!\n\n";
 
 
-sub do_db {
-	my ($dbh, $sql, @values) = @_;
-	my $sth = $dbh->prepare($sql); 
-	$sth->execute(@values);
-	return $sth;	
-}
 
 
 {
-	my $status_header = "";
+    my $status_header = "";
 
-	# hrmm, maybe I could do something with a closure
-	# to have to stop the double print and status thingies
-	sub status_init {
-		$status_header = shift || "";
+    # hrmm, maybe I could do something with a closure
+    # to have to stop the double print and status thingies
+    sub status_init {
+        $status_header = shift || "";
 
-		print $status_header;
-		print "."x($width-length($status_header));
-	}
+        print $status_header;
+        print "."x($width-length($status_header));
+    }
 
-	sub status_update {
-		my $update = shift || "";
-		print "\r";
-		print $status_header;
-		print "."x($width-length($status_header.$update));
-		print $update;
-		
-	}
+    sub status_update {
+        my $update = shift || "";
+        print "\r";
+        print $status_header;
+        print "."x($width-length($status_header.$update));
+        print $update;
+        
+    }
 
-	sub status_finish {
-		my $end = shift || "";
+    sub status_finish {
+        my $end = shift || "";
                 print "\r";
                 print $status_header;
                 print "."x($width-length($status_header.$end));
                 print $end;
-		print "\n";
-		$status_header = "";
-	}
+        print "\n";
+        $status_header = "";
+    }
 }
+
+package  Bot::Infobot::Importer::DBI;
+use DBI;
+use Carp qw(croak);    
+
+sub new {
+    my $class = shift;
+
+    my $dbi = DBI->connect( @_ ) || die "DB connection not made - $DBI::errstr\n";
+
+    my $self = { dbh => $dbi };
+
+    return bless $self, $class;
+}
+
+sub fetch {
+    my ($self, $table, $key) = @_;
+    my $sql = "SELECT * FROM $table";
+    if ($key) {
+        $sql .= " where key = ?";
+    } 
+    $self->{sth} = $self->do_db($sql, $key);
+
+    return $self->{sth};
+}
+
+sub rows {
+    my $self = shift;
+    croak "No statement set up" unless $self->{sth};
+    return $self->{sth}->rows;
+
+}
+
+
+
+sub next {
+    my ($self) = @_;
+    my $return = $self->{sth}->fetchrow_hashref;
+    # munge pkey and pvalue to right names
+    for (qw(key value)) {
+        $return->{$_} = $return->{"p$_"};
+        delete $return->{"p$_"};
+    }
+    return $return;
+}
+
+sub finish {
+    my ($self) = @_;
+    $self->{sth}->finish;
+    delete $self->{sth};
+}
+
+
+sub do_db {
+    my ($self, $sql, @values) = @_;
+    my $sth = $self->{dbh}->prepare($sql);
+    $sth->execute(@values);
+    return $sth;
+}
+
+
+
+package  Bot::Infobot::Importer::DBM;
+use Carp qw(croak);
+use Fcntl qw(/^O_/);
+use Data::Dumper;
+use AnyDBM_File;
+use POSIX;
+
+
+sub new {
+    my $class = shift;
+
+    my $module = 'AnyDBM_File';
+    my $self = { table_prefix => $_[0], module => $module };
+    
+    eval "require $module"; die if $@;
+
+    
+    return bless $self, $class;
+}
+
+sub fetch  {
+    my ($self, $table, $key) = @_;
+
+    my $module = $self->{module};
+    my $prefix = $self->{table_prefix};
+
+    no warnings;
+    no strict;
+    
+    my $dbname =  "${prefix}-${table}";
+    
+    my %db;
+    tie (%db, $module, "$dbname", O_RDONLY, 0) 
+         || die "Couldn't open \"$dbname\" with $module: $!";
+
+    $self->{db}  = \%db;
+    $self->{key} = $key if $key;
+}
+
+sub rows {
+    my $self = shift;
+    croak "No statement set up" unless $self->{db};
+    return keys %{$self->{db}};
+
+}
+
+sub next {
+    my ($self) = @_;
+
+    my ($k, $v) = each %{$self->{db}};
+    my $key = $self->{key} || $k;
+
+    return undef unless $key &&  $self->{db}->{$key};
+    
+    return { key => $key, value => $self->{db}->{$key} };
+
+}
+
+sub finish {
+    my $self = shift;
+    untie $self->{db} if $self->{db};
+    delete  $self->{db};
+    delete  $self->{key};
+}
+
+
+1;
