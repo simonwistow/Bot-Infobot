@@ -4,7 +4,6 @@ use Carp qw(croak);
 use strict;
 
 sub handle {
-    my $class = shift;
     return $_[0] =~ m!^dbi:!;
 }
 

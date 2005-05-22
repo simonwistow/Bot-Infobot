@@ -3,12 +3,11 @@ use strict;
 use Fcntl qw(:seek);
 
 sub handle {
-    my $class = shift;
     return $_[0] =~ m!\.fact$!i;
 }
 
 sub new {
-    my $class = shift;
+	my $class = shift;
     my $file  = shift;
     my $fh;
     open($fh, $file) || die "Couldn't open $file for reading : $!\n";

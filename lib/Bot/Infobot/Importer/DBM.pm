@@ -7,7 +7,6 @@ use POSIX;
 use strict;
 
 sub handle {
-    my $class = shift;
     my $name  = shift;
     # MUY hacky!
     return (-f "${name}-is.pag" && -f "${name}-is.dat");

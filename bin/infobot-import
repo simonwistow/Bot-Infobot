@@ -32,7 +32,8 @@ $|++;
 # sort of the importer class
 my $importer;
 for my $plugin (main::plugins()) {
-    if ($plugin->handle(@ARGV)) {
+    my $sub = $plugin->can('handle');
+    if ($sub && $sub->(@ARGV)) {
         $importer = $plugin->new(@ARGV);
         last;
     }
