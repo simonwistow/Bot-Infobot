@@ -5,7 +5,7 @@ use strict;
 use Bot::Infobot::Config qw( parse_config save_config );
 use Text::CSV;
 use Data::Dumper;
-use Module::Pluggable require => 1, search_path => "Bot::Infobot::Importer";
+use Module::Pluggable require => 1, search_path => "Bot::Infobot::Importer", sub_name => 'importers';
 
 
 die "You must pass at least a DSN\n" unless @ARGV;
@@ -31,8 +31,8 @@ $|++;
 
 # sort of the importer class
 my $importer;
-for my $plugin (main::plugins()) {
-    my $sub = $plugin->can('handle');
+for my $plugin (importers()) {
+	my $sub = $plugin->can('handle');
     if ($sub && $sub->(@ARGV)) {
         $importer = $plugin->new(@ARGV);
         last;
