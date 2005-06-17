@@ -17,7 +17,7 @@ my $build = Module::Build
 #                         'Bot::BasicBot::Pluggable::Module::Weather'     => '0.9',
 #                         'Bot::BasicBot::Pluggable::Module::Tools'       => '0.95',
 #                         'Bot::BasicBot::Pluggable::Module::Search'      => '0.96',
-                          'Bot::BasicBot::Pluggable::Module::Network'     => '0.9',
+#                         'Bot::BasicBot::Pluggable::Module::Network'     => '0.9',
                         },
          scripts     => [ 'bin/infobot', 'bin/infobot-import' ],
          create_makefile_pl => 'traditional',

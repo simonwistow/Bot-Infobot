@@ -181,7 +181,7 @@ for (@multi_keys) {
 
 # fire up the bot
 my $bot = Bot::BasicBot::Pluggable->new( %conf );
-
+$bot->store_from_hashref($conf{store});
 
 $SIG{INT} = sub 
 { 
