@@ -164,8 +164,12 @@ L<Bot::BasicBot::Pluggable>, L<Config::Tiny>
 # plugins will have to take care of themselves
 my @multi_keys = qw(alt_nicks ignore_list channels);
 
+
+
 # read the config, if it exists
 my $file   = "infobot.conf";
+
+
 
 # read all the root config values in, splitting where necessary
 my %conf = parse_config($file);
@@ -175,6 +179,24 @@ for (@multi_keys) {
     next unless exists $conf{$_};
     my @vals = split ' ', $conf{$_};
     $conf{$_} = \@vals;
+}
+
+
+if ($ARGV[0] && $ARGV[0] eq '--jabber') {
+	print STDERR "Using Jabber transport\n";
+	require Bot::JabberBot;
+	@Bot::BasicBot::Pluggable::ISA = qw(Bot::JabberBot);
+	my $jabber = $conf{Jabber};
+	$jabber->{resource} ||= "Infobot";
+	delete $conf{Jabber};
+	foreach my $k (keys %$jabber) {
+		$conf{$k} = $jabber->{$k};
+	}
+	foreach (qw(channels ignore_list)) {
+		no strict 'refs';
+		my $sub = "Bot::BasicBot::Pluggable::$_";
+		*$sub = sub { () };
+	}
 }
 
 
