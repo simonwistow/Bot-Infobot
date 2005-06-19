@@ -141,6 +141,24 @@ some examples
 
 the table should be created automatically
 
+=head1 JABBER
+
+The infobot can also work via Jabber. Simply obtain an account
+on a Jabber server somewhere and then stick this in your config
+
+    [ Jabber ]
+    server   = <address of server>
+    password = <password>
+
+Any values in the Jabber section will overwrite values used in the main
+section so if you want a different nick for the jabber version of your bot
+then put a C<nick = > in the Jabber section. 
+
+Then simply invoke the bot like normal but with a C<--jabber> switch
+
+	% infobot --jabber
+
+And it should just work.
 
 =head1 AUTHOR
 
@@ -264,7 +282,7 @@ sub said {
 
 sub catch_reply {
   my ($self,$mess, @reply) = @_;
-  warn "CAUGHT ".join("\n",@reply)."\n";
+  warn "CAUGHT ".join("\n",@reply)."\n" if $self->{verbose};
   push @{$self->{reply_catcher}} , @reply;
   return 1;
 }
