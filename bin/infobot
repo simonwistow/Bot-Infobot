@@ -181,28 +181,30 @@ for (@multi_keys) {
     $conf{$_} = \@vals;
 }
 
+my $class = "Bot::BasicBot::Pluggable";
 
 if ($ARGV[0] && $ARGV[0] eq '--jabber') {
-	print STDERR "Using Jabber transport\n";
-	require Bot::JabberBot;
-	@Bot::BasicBot::Pluggable::ISA = qw(Bot::JabberBot);
-	my $jabber = $conf{Jabber};
-	$jabber->{resource} ||= "Infobot";
-	delete $conf{Jabber};
-	foreach my $k (keys %$jabber) {
-		$conf{$k} = $jabber->{$k};
-	}
-	foreach (qw(channels ignore_list)) {
-		no strict 'refs';
-		my $sub = "Bot::BasicBot::Pluggable::$_";
-		*$sub = sub { () };
-	}
+    print STDERR "Using Jabber transport\n";
+    require Bot::JabberBot;
+    @Bot::BasicBot::Pluggable::ISA = qw(Bot::JabberBot);
+    $class = "Infobot::JabberBot";
+    my $jabber = $conf{Jabber};
+    $jabber->{resource} ||= "Infobot";
+    delete $conf{Jabber};
+    foreach my $k (keys %$jabber) {
+        $conf{$k} = $jabber->{$k};
+    }
+    foreach (qw(channels ignore_list)) {
+        no strict 'refs';
+        my $sub = "Bot::BasicBot::Pluggable::$_";
+        *$sub = sub { () };
+    }
 }
 
 
 
 # fire up the bot
-my $bot = Bot::BasicBot::Pluggable->new( %conf );
+my $bot = $class->new( %conf );
 $bot->store_from_hashref($conf{store});
 
 $SIG{INT} = sub 
@@ -239,3 +241,33 @@ foreach my $key (keys %conf) {
 $bot->run();
 
 # We should maybe write stuff back out 
+
+package Infobot::JabberBot;
+use base qw(Bot::BasicBot::Pluggable);
+use Data::Dumper;
+use strict;
+use Bot::JabberBot;
+
+sub said {
+    my ($self, $mess) = @_;
+    my $who  = $mess->{who}; 
+    $mess->{who}     =~ s!@.*$!!; # get rid of pesky server stuff
+    $mess->{channel} = 'msg';
+    $mess->{address} = 'msg';
+    $mess->{reply_hook} = sub { $self->catch_reply(@_) };
+    $self->SUPER::said($mess);
+    my $reply = join("\n",@{$self->{reply_catcher}});
+    @{$self->{reply_catcher}} = ();
+    Bot::JabberBot::say($self, { who => $who, body => $reply, channel => 'msg' });
+    return;
+}
+
+sub catch_reply {
+  my ($self,$mess, @reply) = @_;
+  warn "CAUGHT ".join("\n",@reply)."\n";
+  push @{$self->{reply_catcher}} , @reply;
+  return 1;
+}
+
+
+1;
