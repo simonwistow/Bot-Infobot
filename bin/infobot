@@ -141,25 +141,6 @@ some examples
 
 the table should be created automatically
 
-=head1 JABBER
-
-The infobot can also work via Jabber. Simply obtain an account
-on a Jabber server somewhere and then stick this in your config
-
-    [ Jabber ]
-    server   = <address of server>
-    password = <password>
-
-Any values in the Jabber section will overwrite values used in the main
-section so if you want a different nick for the jabber version of your bot
-then put a C<nick = > in the Jabber section. 
-
-Then simply invoke the bot like normal but with a C<--jabber> switch
-
-	% infobot --jabber
-
-And it should just work.
-
 =head1 AUTHOR
 
 Simon Wistow <simon@thegestalt.org>
@@ -199,30 +180,8 @@ for (@multi_keys) {
     $conf{$_} = \@vals;
 }
 
-my $class = "Bot::BasicBot::Pluggable";
-
-if ($ARGV[0] && $ARGV[0] eq '--jabber') {
-    print STDERR "Using Jabber transport\n";
-    require Bot::JabberBot;
-    @Bot::BasicBot::Pluggable::ISA = qw(Bot::JabberBot);
-    $class = "Infobot::JabberBot";
-    my $jabber = $conf{Jabber};
-    $jabber->{resource} ||= "Infobot";
-    delete $conf{Jabber};
-    foreach my $k (keys %$jabber) {
-        $conf{$k} = $jabber->{$k};
-    }
-    foreach (qw(channels ignore_list)) {
-        no strict 'refs';
-        my $sub = "Bot::BasicBot::Pluggable::$_";
-        *$sub = sub { () };
-    }
-}
-
-
-
 # fire up the bot
-my $bot = $class->new( %conf );
+my $bot = Bot::BasicBot::Pluggable->new( %conf );
 $bot->store_from_hashref($conf{store});
 
 $SIG{INT} = sub 
@@ -260,32 +219,3 @@ $bot->run();
 
 # We should maybe write stuff back out 
 
-package Infobot::JabberBot;
-use base qw(Bot::BasicBot::Pluggable);
-use Data::Dumper;
-use strict;
-use Bot::JabberBot;
-
-sub said {
-    my ($self, $mess) = @_;
-    my $who  = $mess->{who}; 
-    $mess->{who}     =~ s!@.*$!!; # get rid of pesky server stuff
-    $mess->{channel} = 'msg';
-    $mess->{address} = 'msg';
-    $mess->{reply_hook} = sub { $self->catch_reply(@_) };
-    $self->SUPER::said($mess);
-    my $reply = join("\n",@{$self->{reply_catcher}});
-    @{$self->{reply_catcher}} = ();
-    Bot::JabberBot::say($self, { who => $who, body => $reply, channel => 'msg' });
-    return;
-}
-
-sub catch_reply {
-  my ($self,$mess, @reply) = @_;
-  warn "CAUGHT ".join("\n",@reply)."\n" if $self->{verbose};
-  push @{$self->{reply_catcher}} , @reply;
-  return 1;
-}
-
-
-1;
