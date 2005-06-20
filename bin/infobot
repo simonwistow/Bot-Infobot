@@ -209,7 +209,7 @@ foreach my $key (keys %conf) {
 
     foreach my $sub_key (keys %{$conf{$key}}) {
         my $val = $conf{$key}->{$sub_key};
-        $mod->set($sub_key, $val);
+        $mod->set("user_${sub_key}", $val);
     }
 }
 
