@@ -65,7 +65,7 @@ The port we're going to use.  Defaults to "6667"
 The nick we're going to use.  Defaults to five random letters
 and numbers followed by the word "bot"
 
-=head2 altnicks
+=head2 alt_nicks
 
 Alternate nicks that this bot will be known by.  These are not nicks
 that the bot will try if it's main nick is taken, but rather other
