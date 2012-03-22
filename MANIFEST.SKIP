@@ -7,4 +7,5 @@ loader.settings
 .svn
 .db
 Makefile
-
+.git
+.tar.gz$
