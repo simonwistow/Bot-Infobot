@@ -62,6 +62,12 @@ are up on CPAN.
 
 The original patches that inspired this are here - http://thegestalt.org/simon/perl/
 
+=head1 VERSION CONTROL
+
+The master repository for this code is at
+
+https://github.com/simonwistow/Bot-Infobot
+
 =head1 AUTHOR
 
 Simon Wistow <simon@thegestalt.org>
