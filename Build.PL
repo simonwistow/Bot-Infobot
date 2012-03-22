@@ -4,7 +4,7 @@ use Module::Build;
 my $build = Module::Build
   ->new( module_name   => "Bot::Infobot",
          license       => 'perl',
-         dist_version  => '0.95',
+         dist_version  => '1.0',
          requires      => {
                           'Test::More'                     => 0,
                           'DBI'                            => 0,
