@@ -198,8 +198,8 @@ print "\n";
 # Then set the keys the plugins
 foreach my $key (keys %conf) {
     next if $key eq 'store';
-    next unless ref $key eq 'HASH';
-    my $mod = $bot->module($key);
+    next unless ref $conf{$key} eq 'HASH';
+    my $mod = $bot->load($key);
 
 
     unless (defined $mod) {
