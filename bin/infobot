@@ -1,13 +1,13 @@
-#!perl -w
+#!perl
 
+use warnings;
 use strict;
 use Bot::Infobot::Config qw(parse_config);
 use Bot::BasicBot::Pluggable;
 
-
 =head1 NAME
 
-infobot - an plugin based irc bot based on Kevin Lenzo's original irc bot
+infobot - a plugin based irc bot based on Kevin Lenzo's original irc bot
 
 =head1 DESCRIPTION
 
@@ -33,8 +33,8 @@ Infobot - now with 78% less crack.
 =head1 CONFIGURATION
 
 We look in the current directory for a file called C<infobot.conf>,
-which is in C<.ini> file. Variables are seperated into the main 
-namespace and then sub namespaces for each plugin.  
+which is an C<.ini> file. Variables are separated into the main 
+namespace and then sub-namespaces for each plugin.  
 
 For example the config file 
 
@@ -45,7 +45,7 @@ For example the config file
     [Foo]
     somevar = a value
 
-Will join a couple of channels under the given nick. The plugin
+will join a couple of channels under the given nick. The plugin
 C<Bot::BasicBot::Pluggable::Module::Foo> will have the 
 variable C<somevar> set C<a value>. Individual plugins will
 describe their config values however the config values 
@@ -87,7 +87,7 @@ The name that the bot will identify itself as.  Defaults to
 
 =head2 channels 
 
-The channels we're going to connect to.
+The channels we're going to connect to. Space separated.
 
 =head2 quit_message
 
@@ -113,11 +113,11 @@ When the infobot starts up it will look in the current directory for various
 C<.storable> files. The are used as variable stores for the various plugins.
 
 Stores are passed anything in the C<Store> namespace. Perhaps the most
-important value is C<name> which describes which backend to use - the default
+important value is C<type> which describes which backend to use - the default
 is C<Storable> but C<Bot::BasicBot::Pluggable> also ships with a DBI backend.
 
-See the various backend for what variables you need to pass. Here are 
-some examples
+See the various backend modules for what variables you need to pass. Here are 
+some examples:
 
 =head2 Storable
 
@@ -139,7 +139,7 @@ some examples
     password = mypassword
     table    = brane
 
-the table should be created automatically
+The table 'brane' should be created automatically
 
 =head1 AUTHOR
 
@@ -149,7 +149,7 @@ based on the original code by Kevin Lenzo et al.
 
 =head1 COPYRIGHT
 
-Copyright 2005, Simon Wistow 
+Copyright 2005-2015, Simon Wistow 
 
 Distributed under the same terms as Perl itself.
 
@@ -163,12 +163,8 @@ L<Bot::BasicBot::Pluggable>, L<Config::Tiny>
 # plugins will have to take care of themselves
 my @multi_keys = qw(alt_nicks ignore_list channels);
 
-
-
 # read the config, if it exists
 my $file   = "infobot.conf";
-
-
 
 # read all the root config values in, splitting where necessary
 my %conf = parse_config($file);
@@ -194,28 +190,26 @@ print "Loading Loader: ";
 print "".(($bot->load("Loader"))? "OK" : "NOT OK");
 print "\n";
 
-
-# Then set the keys the plugins
+# Set module parameters from config. Load module if necessary.
 foreach my $key (keys %conf) {
     next if $key eq 'store';
     next unless ref $conf{$key} eq 'HASH';
-    my $mod = $bot->load($key);
-
-
-    unless (defined $mod) {
-        print "We haven't loaded a module $key - config values will be ignored\n";
-        next; # should we 'next' now? bah, wait for people to compain 
+    my $mod;
+    unless ($mod = $bot->module($key)) {
+        $mod = $bot->load($key);
+        if (!defined $mod) {
+            print "We haven't loaded a module $key - config values will be ignored\n";
+            next;
+        }
     }
-
     foreach my $sub_key (keys %{$conf{$key}}) {
         my $val = $conf{$key}->{$sub_key};
-        $mod->set("user_${sub_key}", $val);
+        $mod->set("${sub_key}", $val);
     }
 }
 
-
 # run everything
-$bot->run();
+$bot->run;
 
 # We should maybe write stuff back out 
 
